@@ -20,31 +20,20 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.List;
-
 @Configuration
 @EnableMethodSecurity
 public class WebSecurityConfiguration {
     private final UserDetailsService userDetailsService;
-    private final BearerTokenService tokenService;
     private final BCryptHashingService hashingService;
     private final AuthenticationEntryPoint unauthorizedRequestHandler;
 
-
     public WebSecurityConfiguration(
-            @Qualifier("defaultUserDetailsService")
-            UserDetailsService userDetailsService,
-            BearerTokenService tokenService,
+            @Qualifier("defaultUserDetailsService") UserDetailsService userDetailsService,
             BCryptHashingService hashingService,
             AuthenticationEntryPoint unauthorizedRequestHandler) {
         this.userDetailsService = userDetailsService;
-        this.tokenService = tokenService;
         this.hashingService = hashingService;
         this.unauthorizedRequestHandler = unauthorizedRequestHandler;
-    }
-
-    @Bean
-    public BearerAuthorizationRequestFilter authorizationRequestFilter() {
-        return new BearerAuthorizationRequestFilter(tokenService, userDetailsService);
     }
 
     @Bean
@@ -69,7 +58,7 @@ public class WebSecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // CORS default configuration
-        http.cors(configurer -> configurer.configurationSource( _ -> {
+        http.cors(configurer -> configurer.configurationSource(_ -> {
             var cors = new CorsConfiguration();
             cors.setAllowedOrigins(List.of("*"));
             cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
@@ -81,18 +70,8 @@ public class WebSecurityConfiguration {
                         .authenticationEntryPoint(unauthorizedRequestHandler))
                 .sessionManagement(customizer -> customizer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers(
-                                "/api/v1/authentication/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/swagger-resources/**",
-                                "/api/v1/**",
-                                "/webjars/**").permitAll()
-                        .anyRequest().authenticated());
-        http.authenticationProvider(authenticationProvider());
-        http.addFilterBefore(authorizationRequestFilter(), UsernamePasswordAuthenticationFilter.class);
+                        .anyRequest().permitAll());
         return http.build();
     }
-
 }
+
